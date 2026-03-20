@@ -30,7 +30,7 @@ git clone https://github.com/asJEI/openclaw-feishu-qq-bot.git
 # 2. 启动 Docker
 docker-compose up -d
 # 3. 配置飞书/QQ密钥（config/config.yaml）
-# 4. 访问 http://47.81.33.163:8080 测试
+# 4. 在阿里云轻量服务器部署成功，已实现公网访问
 
 ### 运行成果
 1. 保证24h稳定运行
