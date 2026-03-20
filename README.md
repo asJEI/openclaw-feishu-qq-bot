@@ -31,3 +31,12 @@ git clone https://github.com/asJEI/openclaw-feishu-qq-bot.git
 docker-compose up -d
 # 3. 配置飞书/QQ密钥（config/config.yaml）
 # 4. 访问 http://47.81.33.163:8080 测试
+
+### 运行成果
+# 1.保证24h稳定运行
+# 2.每日准时发送前日总结以及知识点推送
+# 3.节省手动操作时间
+
+### 项目截图
+
+
