@@ -1,1 +1,7 @@
-
+fastapi
+uvicorn
+python-dotenv
+pyyaml
+httpx
+pydantic
+lark-oapi
