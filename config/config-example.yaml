@@ -2,17 +2,62 @@ server:
   port: 8080
   debug: true
 
+# 飞书自建应用
 feishu:
-  app_id: "cli_a92a462044791bd6"
-  app_secret: "Mh3AQKyT0x4VyfIuPq3LpcKjbC6kP5KE"
-  verification_token: "xxxxxxxx" # 用于校验回调请求
-  event_encrypt_key: "" # 如果开启了加密则填写
+  app_id: "YOUR_FEISHU_APP_ID"
+  app_secret: "YOUR_FEISHU_APP_SECRET"
+  verification_token: ""
+  event_encrypt_key: ""
 
+# QQ 机器人开放平台（与控制台「机器人 ID / AppSecret」一致）
+# Webhook 回调需 HTTPS，端口仅支持 80、443、8080、8443
 qq:
-  bot_id: "xxxx"
-  token: "xxxx"
-  secret: "xxxx"
+  app_id: "YOUR_QQ_BOT_APP_ID"
+  bot_id: "YOUR_QQ_BOT_APP_ID" # 兼容旧字段，与 app_id 相同即可
+  client_secret: "YOUR_QQ_APP_SECRET"
+  secret: "YOUR_QQ_APP_SECRET" # 兼容旧字段，与 client_secret 相同即可
+  sandbox: false # 沙箱环境改为 true，API 基址变为 sandbox.api.sgroup.qq.com
+  verify_signature: true # 本地调试若需跳过验签可改为 false（生产务必 true）
 
+# NewAPI / OpenAI 兼容网关
 openclaw:
-  api_url: "http://119.45.237.47:18789/v1"
-  api_key: "sk-gCb5bYhfvehZzPtyOlFRjwgYcwG8rTMGLWxgDHh1WaqZEnwn"
+  api_url: "https://your-newapi.example.com/v1"
+  api_key: "YOUR_API_KEY"
+  model: "deepseek-chat"
+  enable_tools: true # 关闭后不再下发 function calling（兼容不支持 tools 的模型）
+  max_tool_rounds: 5
+
+# 短期记忆：达到条数（user+assistant 各算一条）后触发总结并写入向量库
+memory:
+  short_term_max_messages: 6
+  store_each_turn_in_vector: false # true 时每轮对话额外写入向量库（除总结外）
+
+# Chroma 向量库：与 bot 同机 Docker 时 host 填服务名 chromadb
+database:
+  chroma_host: "127.0.0.1"
+  chroma_port: 8000
+
+# 可插拔技能：LLM 为大脑，技能按顺序加载（内置 → pip entry_points → extra_modules → plugins/）
+skills:
+  enable_plugins: true
+  # 禁用的本地插件文件名（不含 .py），例如：["example_time"]
+  disable_plugins: []
+  # 通过 pip 安装后，在此声明模块路径，例如：["my_weather_skill", "company_rag.tools"]
+  extra_modules: []
+
+# 联网搜索：auto=优先腾讯云 WSA（见下），失败则 ddgs；tencent_wsa=仅 WSA；ddgs=仅 ddgs
+search:
+  provider: auto
+
+# 腾讯云联网搜索 API（WSA）SearchPro，文档：https://cloud.tencent.com/document/api/1806/121811
+tencent_wsa:
+  enabled: false
+  secret_id: ""
+  secret_key: ""
+  # 接入域名，就近接入示例：wsa.tencentcloudapi.com；也可填地域域名如 wsa.ap-guangzhou.tencentcloudapi.com
+  endpoint: "wsa.tencentcloudapi.com"
+  # SDK 所需地域字符串，可留空字符串；若报错可改为 ap-guangzhou 等与 endpoint 一致的地域
+  region: ""
+  # 0 自然检索（默认），1 多模态 VR，2 混合
+  mode: 0
+  timeout_seconds: 30

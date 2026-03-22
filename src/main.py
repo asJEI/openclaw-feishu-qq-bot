@@ -1,16 +1,26 @@
-import uvicorn
 import json
+import sys
+from pathlib import Path
+
+# 允许直接执行 `python src/main.py`（无需在 PowerShell 里单独设 PYTHONPATH）
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+import uvicorn
 from fastapi import FastAPI, Request
 from src.channels.feishu_handler import FeishuHandler
+from src.channels.qq_handler import QQBotHandler
 from src.core.config import settings
 from src.core.logger import logger
 
 app = FastAPI()
 feishu_handler = FeishuHandler()
+qq_handler = QQBotHandler()
 
 @app.get("/")
 def index():
-    return {"status": "running", "msg": "OpenClaw Feishu Bot is alive!"}
+    return {"status": "running", "msg": "OpenClaw Feishu + QQ Bot is alive!"}
 
 # 飞书回调地址
 @app.post("/webhook/feishu")
@@ -41,13 +51,18 @@ async def feishu_webhook(request: Request):
         print(f"💥 Handler 处理报错: {e}")
         return {"code": 1, "msg": str(e)}
 
+
+@app.post("/webhook/qq")
+async def qq_webhook(request: Request):
+    raw_body = await request.body()
+    headers = {k: v for k, v in request.headers.items()}
+    return await qq_handler.handle_raw_webhook(headers, raw_body)
+
+
 if __name__ == "__main__":
     # 获取端口，默认 8080
     port = settings.get("server.port", 8080)
     
-    print("\n" + "🚀" * 20)
-    print(f"项目尝试启动在端口: {port}")
-    print(f"请确保你的 ngrok 转发的是: {port}")
-    print("🚀" * 20 + "\n")
+    print(f"\n[Server] listening on 0.0.0.0:{port} (point ngrok / reverse proxy here)\n")
     
     uvicorn.run(app, host="0.0.0.0", port=int(port))

@@ -1,0 +1,24 @@
+services:
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      ANONYMIZED_TELEMETRY: "false"
+
+  bot:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/app/config:ro
+    environment:
+      PYTHONPATH: /app
+    # 请在 config/config.yaml 中将 database.chroma_host 设为 chromadb（与 compose 服务名一致）
+    depends_on:
+      - chromadb
+
+volumes:
+  chroma_data:

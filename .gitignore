@@ -1,1 +1,33 @@
+# 本地配置与密钥（切勿提交）
+config/config.yaml
+.env
+.env.*
+*.local.yaml
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# 工具与 IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# 测试与覆盖率
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 日志与临时文件
+*.log
+tmp/
+temp/

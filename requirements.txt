@@ -5,3 +5,8 @@ pyyaml
 httpx
 pydantic
 lark-oapi
+chromadb
+pynacl
+ddgs>=9.0
+duckduckgo-search
+tencentcloud-sdk-python>=3.0.1200

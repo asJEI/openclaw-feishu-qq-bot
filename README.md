@@ -1,48 +1,120 @@
-# OpenClaw多平台个人AI智能体
+# OpenClaw 飞书 + QQ 机器人
 
-个人项目 | 2026.03-至今 
+基于 **FastAPI** 的多通道机器人：飞书（Lark）Webhook、QQ 开放平台 Webhook；通过 **OpenAI 兼容接口**（如 NewAPI）调用大模型，支持 **Function Calling**、**可插拔 Skills**、**短期记忆 + Chroma 长期向量记忆**。
 
-基于开源OpenClaw框架二次开发的24h在线多平台个人AI智能体，已实现飞书 + QQ 跨平台消息路由、自动回复、日报生成、信息抓取等功能。
+> **说明**：仓库里的 `openclaw` 指配置段名称，实际对接的是 **OpenAI 兼容的 `chat/completions` 网关**，并非单独嵌入另一套 OpenClaw 运行时。
 
-### 项目亮点
-- 支持飞书自建应用+Tencent Bot SDK 双平台同时在线
-- 实现 Function Calling / Tool Calling（自动调用外部接口）
-- 集成持久化内存+Docker 部署
-- 已验证 RAG+提示工程能力（后续将升级 LangGraph 多智能体）
+---
 
-### 核心功能
-1. 飞书/QQ自动回复（支持@机器人指令）
-2. 每日日报自动生成并推送
-3. 信息抓取+总结（飞书消息/QQ消息）
-4. Tool Calling 示例（天气查询、时间提醒、数据库查询等）
+## 功能概览（当前已实现）
 
-### 技术栈
-- **后端**：Python+FastAPI
-- **Agent 框架**：OpenClaw
-- **部署**：Docker+阿里云轻量服务器
-- **集成**：Feishu OpenAPI+Tencent Bot SDK
-- **模型**：本地 Ollama Qwen3.5-9B（4bit量化）/Qwen3.5
-- **计划升级**：LangGraph + MCP 多智能体
+| 能力 | 说明                                                                |
+| ---- | ------------------------------------------------------------------- |
+| 飞书 | `POST /webhook/feishu`，异步回复、租户 token                        |
+| QQ   | `POST /webhook/qq`，Ed25519 验签、`op=13` 回调验证、单聊/群@/频道 @ |
+| 模型 | 多轮 tool_calls、内置联网搜索（ddgs）、长期记忆检索                 |
+| 记忆 | 短期窗口 + 达轮数后总结写入 Chroma                                  |
+| 扩展 | `src/skills/plugins/*.py` 插件式技能                                |
 
-### 部署步骤
-# 1. 克隆仓库
-git clone https://github.com/asJEI/openclaw-feishu-qq-bot.git
-# 2. 启动 Docker
-docker-compose up -d
-# 3. 配置飞书/QQ密钥（config/config.yaml）
-# 4. 在阿里云轻量服务器部署成功，已实现公网访问
+部分 README 历史描述（如固定「日报推送」流水线）属于规划或自建逻辑，**以代码与下表运行方式为准**。
 
-### 运行成果
-1. 保证24h稳定运行
-2. 每日准时发送前日总结以及知识点推送
-3. 节省手动操作时间
+---
 
-### 项目截图
-![微信图片_20260320114755_293_56](https://github.com/user-attachments/assets/d3f4d396-9dee-4026-8457-e716004a5dcc)
-![微信图片_20260320114757_294_56](https://github.com/user-attachments/assets/99139705-ae32-4737-8552-c674b435bd8d)
-![微信图片_20260320114759_295_56](https://github.com/user-attachments/assets/c220f5d9-9329-4709-89be-eadb1f10a150)
+## 环境要求
 
-### 未来计划
-1. 接入 LangGraph 实现多智能体协作（参考《AI Agent开发实战》邢云阳 第6章）
-2. 添加企业级 RAG 知识库
-3. 支持更多平台（企业微信/钉钉）
+- **Python 3.10+**（Docker 镜像为 3.11）
+- 可访问的 **OpenAI 兼容 API**（`base_url` + `api_key`）
+- 可选：**ChromaDB**（不配或连不上时长期记忆降级为空，服务仍可启动）
+
+---
+
+### 方式一：本机直接运行（适合调试）
+
+```bash
+git clone <你的仓库地址>.git
+cd openclaw-feishu-qq-bot
+
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
+
+pip install -r requirements.txt
+
+cp config/config-example.yaml config/config.yaml
+# 编辑 config/config.yaml：feishu / qq / openclaw / database / skills
+
+python src/main.py
+```
+
+浏览器访问：`http://127.0.0.1:8080/`（端口见 `config.yaml` 里 `server.port`）。
+
+**PowerShell 复制配置示例：**
+
+```powershell
+Copy-Item config\config-example.yaml config\config.yaml
+```
+
+### 方式二：Docker Compose
+
+1. 同上复制并编辑好 **`config/config.yaml`**（不要提交到 Git）。
+2. 在 `config.yaml` 中将向量库地址改为 Compose 服务名：
+
+```yaml
+database:
+  chroma_host: chromadb
+  chroma_port: 8000
+```
+
+3. 在项目根目录执行：
+
+```bash
+docker compose up -d --build
+```
+
+- 机器人：`http://<宿主机>:8080`
+- Chroma：宿主机 `8000`（可按需改 `docker-compose.yml` 端口映射）
+
+查看日志：`docker compose logs -f bot`
+
+---
+
+## 回调地址怎么填
+
+| 平台          | URL 示例                                                                                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 飞书 事件订阅 | `https://你的域名/webhook/feishu`                                                                                                                         |
+| QQ Webhook    | `https://你的域名/webhook/qq`（须 HTTPS，端口限制见 [QQ 文档](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/event-emit.html)） |
+
+本地开发可用 **ngrok** 等把本机 `8080` 暴露为 HTTPS。
+
+---
+
+## 配置项摘要
+
+详见 **`config/config-example.yaml`**，主要包括：
+
+- `feishu.*`、`qq.*`
+- `openclaw.*`（`api_url`、`api_key`、`model`、`enable_tools`）
+- `memory.*`、`database.*`（Chroma）
+- `skills.*`（插件开关与 `disable_plugins`）
+- `search.provider`：`auto`（优先 [腾讯云联网搜索 WSA](https://cloud.tencent.com/document/api/1806/121811)，失败再走 ddgs）、`tencent_wsa`、`ddgs`
+- `tencent_wsa.*`：`enabled`、`secret_id`、`secret_key`、`endpoint`（如 `wsa.tencentcloudapi.com`）、`region`、`mode`
+
+---
+
+## 可插拔技能
+
+在 **`src/skills/plugins/`** 下新增 `.py`，导出 `TOOL_DEFINITIONS` 与 `async def run_tool(...)`。示例见 `example_time.py`。详见 `src/skills/registry.py` 顶部注释。
+
+---
+
+## 开源前请检查
+
+- [ ] 已用 **`.gitignore`** 忽略 `config/config.yaml`，且仓库内**无真实密钥**
+- [ ] 若曾误提交过 `config.yaml`，需 **轮换** 飞书/QQ/API Key，并用 `git filter-repo` 等清理历史（必要时）
+
+---
+
+## License
+
+个人/学习用途请自行补充许可证文件（如 MIT）；未添加前默认「仅作参考使用」。
