@@ -1,16 +1,16 @@
 ---
 name: openclaw-feishu-qq-bot
 description: >-
-  维护本仓库中 OpenClaw 多通道机器人（飞书 Webhook、QQ 开放平台 Webhook）、
+  维护本仓库中基于 NewAPI 的多通道 AI Agent（飞书 Webhook、QQ 开放平台 Webhook）、
   工具调用与 Chroma 长期记忆时的约定与部署步骤。
 ---
 
-# OpenClaw 飞书 + QQ 机器人项目
+# 基于 NewAPI 的多平台 AI Agent
 
 ## 架构要点
 
 - **飞书**：`POST /webhook/feishu`，事件 `im.message.receive_v1`，异步回复避免超时重试。
-- **QQ**：`POST /webhook/qq`，载荷为网关结构 `op` / `d` / `t`。须校验 `X-Signature-Ed25519` + `X-Signature-Timestamp`（与 Body 拼接规则见 `src/channels\qq_crypto.py`）。`op=13` 为回调验证，需返回 `plain_token` + `signature`。
+- **QQ**：`POST /webhook/qq`，载荷为网关结构 `op` / `d` / `t`。须校验 `X-Signature-Ed25519` + `X-Signature-Timestamp`（与 Body 拼接规则见 `src/channels/qq_crypto.py`）。`op=13` 为回调验证，需返回 `plain_token` + `signature`。
 - **模型**：OpenAI 兼容 `POST {api_url}/chat/completions`；可开启 `tools`（`src/skills/tools.py`）。
 
 ## 记忆策略

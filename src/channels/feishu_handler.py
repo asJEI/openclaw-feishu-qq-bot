@@ -3,6 +3,7 @@ import asyncio
 import httpx
 from src.core.agent import agent
 from src.core.config import settings
+from src.core.logger import logger
 
 class FeishuHandler:
     def __init__(self):
@@ -50,11 +51,11 @@ class FeishuHandler:
             user_text = json.loads(content_str).get("text", "")
 
             if user_text:
-                print(f"📩 正在处理消息: {user_text}")
+                logger.info("处理飞书消息: %s", user_text[:50] + "..." if len(user_text) > 50 else user_text)
                 reply = await agent.get_response(chat_id, user_text)
                 await self.send_text_message(chat_id, reply)
         except Exception as e:
-            print(f"❌ 异步处理出错: {e}")
+            logger.exception("飞书异步处理出错")
 
     async def send_text_message(self, chat_id, text):
         token = await self.get_tenant_access_token()
@@ -70,4 +71,4 @@ class FeishuHandler:
         }
         async with httpx.AsyncClient() as client:
             await client.post(url, json=payload, headers=headers)
-            print("✅ 回复已送达")
+            logger.info("飞书回复已送达 chat_id=%s", chat_id)

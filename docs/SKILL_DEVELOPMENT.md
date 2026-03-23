@@ -1,6 +1,6 @@
 # 技能开发指南
 
-本项目采用 **LLM 为大脑 + 可插拔技能** 的架构，与主流 AI Agent（OpenClaw、LangChain、MCP 等）思路一致。技能可按需安装，无需修改核心代码。
+本项目采用 **LLM 为大脑 + 可插拔技能** 的架构，通过 NewAPI 等 OpenAI 兼容网关调用大模型，与 LangChain、MCP 等 Agent 范式类似。技能可按需安装，无需修改核心代码。
 
 ## 技能加载顺序
 

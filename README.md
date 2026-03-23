@@ -1,12 +1,12 @@
-# OpenClaw 飞书 + QQ 机器人
+# Feishu QQ LLM Bot（飞书 + QQ 多通道 AI 机器人）
 
-基于 **FastAPI** 的多通道机器人：飞书（Lark）Webhook、QQ 开放平台 Webhook；通过 **OpenAI 兼容接口**（如 NewAPI）调用大模型，支持 **Function Calling**、**可插拔 Skills**、**短期记忆 + Chroma 长期向量记忆**。
+基于 **NewAPI**（OpenAI 兼容网关）的多通道 LLM 机器人：飞书（Lark）Webhook、QQ 开放平台 Webhook；通过 `chat/completions` 调用大模型，支持 **Function Calling**、**可插拔 Skills**、**短期记忆 + Chroma 长期向量记忆**。
 
-> **说明**：仓库里的 `openclaw` 指配置段名称，实际对接的是 **OpenAI 兼容的 `chat/completions` 网关**，并非单独嵌入另一套 OpenClaw 运行时。
+> 配置中的 `openclaw` 段即 NewAPI / LLM 网关配置（`api_url`、`api_key`、`model` 等）。
 
 ---
 
-## 功能概览（当前已实现）
+## 功能概览
 
 | 能力 | 说明                                                                |
 | ---- | ------------------------------------------------------------------- |
@@ -15,8 +15,6 @@
 | 模型 | 多轮 tool_calls、内置联网搜索（ddgs）、长期记忆检索                 |
 | 记忆 | 短期窗口 + 达轮数后总结写入 Chroma                                  |
 | 扩展 | `src/skills/plugins/*.py` 插件式技能                                |
-
-部分 README 历史描述（如固定「日报推送」流水线）属于规划或自建逻辑，**以代码与下表运行方式为准**。
 
 ---
 
@@ -32,7 +30,7 @@
 
 ```bash
 git clone <你的仓库地址>.git
-cd openclaw-feishu-qq-bot
+cd feishu-qq-llm-bot
 
 python -m venv .venv
 # Windows: .venv\Scripts\activate
@@ -86,5 +84,11 @@ docker compose up -d --build
 | QQ Webhook    | `https://你的域名/webhook/qq`（须 HTTPS，端口限制见 [QQ 文档](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/event-emit.html)） |
 
 本地开发可用 **ngrok** 等把本机 `8080` 暴露为 HTTPS。
+
+---
+
+## 更多文档
+
+- [技能开发指南](docs/SKILL_DEVELOPMENT.md)：如何编写插件式技能、接入 pip 包
 
 ---
