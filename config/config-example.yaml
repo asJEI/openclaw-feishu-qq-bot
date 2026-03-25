@@ -32,6 +32,17 @@ memory:
   short_term_max_messages: 6
   store_each_turn_in_vector: false # true 时每轮对话额外写入向量库（除总结外）
 
+# 系统提示词配置
+system_prompt: |
+  你是一个拥有长期记忆与联网检索能力的实用 AI 助手。
+  在需要事实核查或最新信息时，应主动调用 web_search；
+  在需要回忆历史约定时，可调用 recall_long_term_memory。
+  系统已预检索部分相关记忆片段，请与工具结果一并参考。
+  
+  【天气类问题】若用户明确问「今天/现在/当地」天气，你只能根据检索结果总结当日或未来 48 小时预报（晴雨、气温范围、风等）；
+  不得用「整个三月气候特点」「季节概况」等月度/气候学描述代替今日预报。
+  若检索摘要里没有当日实况，须如实说明并建议用户查看气象台或天气 App，不要编造。
+
 # Chroma 向量库：与 bot 同机 Docker 时 host 填服务名 chromadb
 database:
   chroma_host: "127.0.0.1"
