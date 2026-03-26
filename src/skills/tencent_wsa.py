@@ -1,9 +1,6 @@
+"""腾讯云 WSA 联网搜索 API。
+文档: https://cloud.tencent.com/document/api/1806/121811
 """
-腾讯云联网搜索 API（WSA）SearchPro。
-文档：https://cloud.tencent.com/document/api/1806/121811
-接入域名示例：wsa.tencentcloudapi.com 或 wsa.ap-guangzhou.tencentcloudapi.com
-"""
-
 from __future__ import annotations
 
 import json
@@ -16,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def is_configured() -> bool:
-    if not settings.get("tencent_wsa.enabled", False):
+    if not settings.get("tencent_wsa.enabled"):
         return False
     sid = (settings.get("tencent_wsa.secret_id") or "").strip()
     sk = (settings.get("tencent_wsa.secret_key") or "").strip()
@@ -24,6 +21,7 @@ def is_configured() -> bool:
 
 
 def search_sync(query: str, max_results: int = 10) -> list[dict[str, str]]:
+    """同步调用腾讯云 WSA SearchPro。"""
     q = (query or "").strip()
     if not q:
         return []
@@ -39,25 +37,19 @@ def search_sync(query: str, max_results: int = 10) -> list[dict[str, str]]:
         from tencentcloud.common.profile.http_profile import HttpProfile
         from tencentcloud.wsa.v20250508 import wsa_client, models
     except ImportError:
-        logger.warning("未安装 tencentcloud-sdk-python，无法调用 WSA")
+        logger.warning("tencentcloud-sdk-python not installed")
         return []
 
     endpoint = (settings.get("tencent_wsa.endpoint") or "").strip() or "wsa.tencentcloudapi.com"
-    region = settings.get("tencent_wsa.region")
-    if region is None:
-        region = ""
-    region = str(region).strip()
-
+    region = str(settings.get("tencent_wsa.region") or "").strip()
     mode = settings.get("tencent_wsa.mode", 0)
+    timeout = settings.get("tencent_wsa.timeout_seconds", 30)
+
     try:
         mode = int(mode)
-    except (TypeError, ValueError):
-        mode = 0
-
-    timeout = settings.get("tencent_wsa.timeout_seconds", 30)
-    try:
         timeout = int(timeout)
     except (TypeError, ValueError):
+        mode = 0
         timeout = 30
 
     http_profile = HttpProfile(endpoint=endpoint, reqTimeout=timeout)
@@ -74,26 +66,21 @@ def search_sync(query: str, max_results: int = 10) -> list[dict[str, str]]:
     try:
         resp = client.SearchPro(req)
     except Exception as e:
-        logger.info("腾讯云 WSA SearchPro 失败: %s", e)
+        logger.info("WSA SearchPro failed: %s", e)
         return []
 
-    out: list[dict[str, str]] = []
-    pages = resp.Pages or []
-    for raw in pages[: max(1, max_results)]:
-        if not isinstance(raw, str):
+    results: list[dict[str, str]] = []
+    for page in (resp.Pages or [])[:max_results]:
+        if not isinstance(page, str):
             continue
         try:
-            obj: dict[str, Any] = json.loads(raw)
+            obj: dict[str, Any] = json.loads(page)
         except json.JSONDecodeError:
             continue
         title = (obj.get("title") or "").strip()
         url = (obj.get("url") or "").strip()
-        body = (obj.get("passage") or obj.get("content") or "").strip()
-        if not (title or body):
-            continue
-        out.append({"title": title, "url": url, "snippet": body})
+        snippet = (obj.get("passage") or obj.get("content") or "").strip()
+        if title or snippet:
+            results.append({"title": title, "url": url, "snippet": snippet})
 
-    if (resp.Msg or "").strip():
-        logger.debug("WSA Msg: %s", resp.Msg)
-
-    return out
+    return results
